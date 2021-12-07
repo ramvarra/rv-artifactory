@@ -59,12 +59,12 @@ class AFInstance:
         self.session = aiohttp.ClientSession(self.api_url, **session_args)
 
 
-    async def http_request(self, method : str, path : str):
+    async def http_request(self, method : str, path : str, **kwargs):
         rpath = self.api_path / path
         logging.info("http_%s: %s", method, rpath)
-        async with self.session.request(method, rpath) as r:
+        async with self.session.request(method, rpath, **kwargs) as r:
             r.raise_for_status()
-            logging.info('Reponse Headers: %s', r.headers)
+            #logging.info('Reponse Headers: %s', r.headers)
             content_type = r.headers.get('Content-Type')
             if content_type:
                 return await (r.text() if content_type ==  'text/plain' else r.json())
@@ -85,3 +85,13 @@ class AFInstance:
         assert path
         rpath = f"{repo}/{path}"
         await self.http_request('DELETE', rpath)
+
+    async def deploy_file(self, repo : str, path: str, input_obj) -> None:
+        assert repo and path
+        rpath = f"{repo}/{path}"
+        if hasattr(input_obj, 'read'):
+            input_obj = input_obj.read()
+        if isinstance(input_obj, str):
+            input_obj = input_obj.encode('utf-8')
+        assert isinstance(input_obj, bytes)
+        return await self.http_request('PUT', rpath, data=input_obj)
