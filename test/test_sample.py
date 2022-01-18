@@ -1,6 +1,7 @@
 import asyncio
 import pytest
 import re
+from datetime import datetime, timezone
 
 from .context import *
 
@@ -20,3 +21,15 @@ async def test_system_info(af_server):
 async def test_non_existing_repo(af_server):
     with pytest.raises(afasync.ItemNotFoundError):
         await af_server.get_item_info(repo='non_existing_repo')
+
+async def test_empty_repo(af_server, af_test_repo):
+    info = await af_server.get_item_info(repo=af_test_repo)
+    assert info
+    assert info.is_dir
+    assert len(info.file_children) == 0
+    assert len(info.dir_children) == 0
+    for attr_name in ['created', 'modified', 'updated']:
+        assert hasattr(info, attr_name)
+        t = getattr(info, attr_name)
+        assert isinstance(t, datetime)
+        assert t.tzinfo is timezone.utc

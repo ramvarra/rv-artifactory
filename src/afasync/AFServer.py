@@ -1,14 +1,9 @@
-import json
-from os import statvfs, strerror
 import yarl
 from typing import Optional, Tuple, Union, Any
 import logging
-import asyncio
 import aiohttp
 import base64
 from datetime import datetime, timezone
-from contextlib import AsyncContextDecorator
-
 
 # Custo Exceptions
 class APIError(Exception):
@@ -51,7 +46,7 @@ class AFItemInfo:
         return not self.is_dir
 
 
-class AFServer(AsyncContextDecorator):
+class AFServer:
     def __init__(self, api_url: str,  *, auth: Optional[tuple[str, str]] = None,
                     api_key: Optional[str] = None) -> None:
         '''
@@ -73,11 +68,13 @@ class AFServer(AsyncContextDecorator):
         session_args = dict(headers=headers)
         self.session = aiohttp.ClientSession(self.api_url, **session_args)
 
+    
     async def __aenter__(self):
         return self
 
     async def __aexit__(self, *exc):
         await self.session.close()
+        
 
     async def close_session(self):
         await self.session.close()

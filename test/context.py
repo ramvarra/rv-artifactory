@@ -9,9 +9,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 import afasync
 
+# AF RVHOME
+'''
 AF_API_URL = 'http://jupiter.ramvarra.com:8081/artifactory'
 AF_API_KEY = 'AKCp8k8sxbSxCDvSubFBjF1bg5LD8wYQzpwhrmqC4nXh3tN3jNFa7Nh5jQKxTGzVBggTb6oNA'
-AF_TEST_REPO = 'rv-test'
+AF_TEST_REPO = 'ramvarra-test'
+'''
+
+# AF FM-NEXT (FMDEV)
+AF_API_URL = 'https://fm-next-af.devtools.intel.com/artifactory'
+AF_API_KEY = 'AKCp8k93AdnuruLPxkbQhSoXcZBdzv1qDhPLt7kh7mMmFoHtCkToPDNDNAQAtZVgUqEKx4x2p'
+AF_TEST_REPO = 'afasync-test'
 
 @pytest.fixture(scope="session")
 def af_api_url():
@@ -28,9 +36,11 @@ def af_test_repo():
 # https://github.com/pytest-dev/pytest-asyncio/issues/68
 @pytest.fixture(scope='session')
 def event_loop(request):
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    #loop = asyncio.get_event_loop_policy().new_event_loop()
+    #loop = asyncio.get_running_loop()
+    loop = asyncio.new_event_loop()    
     yield loop
-    loop.close()
+    #loop.close()
 
 @pytest.fixture(scope="session")
 async def af_server(af_api_url, af_api_key):
