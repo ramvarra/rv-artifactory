@@ -7,7 +7,19 @@ import asyncio
 import aiohttp
 import base64
 from datetime import datetime, timezone
+from contextlib import AsyncContextDecorator
 
+
+# Custo Exceptions
+class APIError(Exception):
+    def __init__(self, method, api, status, error):
+        super().__init__(f"API '{method} {api}' failed with {status} - '{error}'")
+
+class NoPropertiesFound(Exception):
+    pass
+
+class ItemNotFoundError(FileNotFoundError):
+    pass
 
 class AFItemInfo:
     @staticmethod
@@ -38,14 +50,8 @@ class AFItemInfo:
     def is_file(self):
         return not self.is_dir
 
-class APIError(Exception):
-    def __init__(self, method, api, status, error):
-        super().__init__(f"API '{method} {api}' failed with {status} - '{error}'")
 
-class NoPropertiesFound(Exception):
-    pass
-
-class AFInstance:
+class AFServer(AsyncContextDecorator):
     def __init__(self, api_url: str,  *, auth: Optional[tuple[str, str]] = None,
                     api_key: Optional[str] = None) -> None:
         '''
@@ -67,13 +73,22 @@ class AFInstance:
         session_args = dict(headers=headers)
         self.session = aiohttp.ClientSession(self.api_url, **session_args)
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        await self.session.close()
+
+    async def close_session(self):
+        await self.session.close()
+
     @staticmethod
     def success(status):
         return 200 <= status < 300
 
     @staticmethod
     def check_for_errors(status: int, data: dict) -> Optional[str]:
-        if AFInstance.success(status):
+        if AFServer.success(status):
             return None
         if errors := data.get('errors'):
             assert isinstance(errors, list), f"Errors expected to be list, but got {errors}"
@@ -92,7 +107,7 @@ class AFInstance:
                     data = errstr
                 if r.status == 404:
                     if 'Unable to find item' in data:
-                        raise FileNotFoundError(path)
+                        raise ItemNotFoundError(path)
                     elif "No properties could be found." in data:
                         raise NoPropertiesFound()
             elif 'text' in content_type:
@@ -165,7 +180,7 @@ class AFInstance:
             if isinstance(value, (list, tuple)):
                 value = ",".join([AFInstance.escape_chars(x) for x in value])
             else:
-                value = AFInstance.escape_chars(value)
+                value = AFServer.escape_chars(value)
 
             result.append("=".join((key, value)))
 
