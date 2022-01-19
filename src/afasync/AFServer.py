@@ -130,12 +130,20 @@ class AFServer:
         status, data = await self.http_request('GET', rpath)
         return AFItemInfo(json_resp=data)
 
-    async def delete_item(self, repo : str, path: str) -> None:
+    async def delete_item(self, repo : str, path: str) -> Union[str, bytes]:
+        '''
+        Returns either "" or b"" (depending on the type of path)
+        '''
         assert repo and path
         rpath = f"{repo}/{path}"
-        await self.http_request('DELETE', rpath)
+        status, result = await self.http_request('DELETE', rpath)
+        return result
 
-    async def deploy_file(self, repo : str, path: str, input_obj: bytes) -> None:
+    async def deploy_file(self, repo : str, path: str, input_obj) -> None:
+        '''
+        Deploy data in input_obj to repo/path
+        input_obj = file like object (that has read() method) or bytes or str
+        '''
         assert repo and path
         rpath = f"{repo}/{path}"
         if hasattr(input_obj, 'read'):
@@ -143,7 +151,8 @@ class AFServer:
         if isinstance(input_obj, str):
             input_obj = input_obj.encode('utf-8')
         assert isinstance(input_obj, bytes), f"Input must be bytes"
-        await self.http_request('PUT', rpath, data=input_obj)
+        status, result = await self.http_request('PUT', rpath, data=input_obj)
+        return result
 
     async def get_properties(self, repo : str, path: str) -> dict:
         assert repo and path
@@ -190,3 +199,4 @@ class AFServer:
             params['recursive'] = "0"
         rpath = f"api/storage/{repo}"
         status, data = await self.http_request('PUT', rpath, params=params)
+

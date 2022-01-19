@@ -1,2 +1,4 @@
 yarl
-aiohttp[speedups]
+aiohttp
+aiodns
+#cchardet

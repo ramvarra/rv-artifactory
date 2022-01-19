@@ -3,44 +3,47 @@ import sys
 import pytest
 import pytest_asyncio
 import asyncio
+import json
+
 # insert local source path to test against it
 # comment this line to test against installed version of afasync
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-
 import afasync
 
-# AF RVHOME
-'''
-AF_API_URL = 'http://jupiter.ramvarra.com:8081/artifactory'
-AF_API_KEY = 'AKCp8k8sxbSxCDvSubFBjF1bg5LD8wYQzpwhrmqC4nXh3tN3jNFa7Nh5jQKxTGzVBggTb6oNA'
-AF_TEST_REPO = 'ramvarra-test'
-'''
-
-# AF FM-NEXT (FMDEV)
-AF_API_URL = 'https://fm-next-af.devtools.intel.com/artifactory'
-AF_API_KEY = 'AKCp8k93AdnuruLPxkbQhSoXcZBdzv1qDhPLt7kh7mMmFoHtCkToPDNDNAQAtZVgUqEKx4x2p'
-AF_TEST_REPO = 'afasync-test'
+TEST_CONFIG = "FM_NEXT"
+CONFIG = json.load(open(os.path.join(os.path.dirname(__file__), 'config.json')))[TEST_CONFIG]
 
 @pytest.fixture(scope="session")
 def af_api_url():
-    yield AF_API_URL
+    yield CONFIG['AF_API_URL']
 
 @pytest.fixture(scope="session")
 def af_api_key():
-    yield AF_API_KEY
+    env_var = CONFIG['AF_API_KEY']
+    key = os.environ.get(env_var)
+    assert key, f"Enviornment variable {env_var} not defined"
+    yield key
 
 @pytest.fixture(scope="session")
 def af_test_repo():
-    yield AF_TEST_REPO
+    # need to use admin api to create it
+    yield CONFIG['AF_TEST_REPO']
+
+@pytest.fixture(scope="session")
+def af_test_empty_repo():
+    # need to use admin api to create it
+    yield CONFIG['AF_TEST_EMPTY_REPO']    
 
 # https://github.com/pytest-dev/pytest-asyncio/issues/68
+
 @pytest.fixture(scope='session')
 def event_loop(request):
-    #loop = asyncio.get_event_loop_policy().new_event_loop()
-    #loop = asyncio.get_running_loop()
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    loop = asyncio.get_event_loop_policy().new_event_loop()    
     loop = asyncio.new_event_loop()    
     yield loop
-    #loop.close()
+    loop.close()
 
 @pytest.fixture(scope="session")
 async def af_server(af_api_url, af_api_key):

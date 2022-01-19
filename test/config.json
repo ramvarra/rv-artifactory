@@ -1,0 +1,13 @@
+{
+    "RV_HOME": {
+        "AF_API_URL": "http://jupiter.ramvarra.com:8081/artifactory",
+        "AF_API_KEY": "RV_HOME_API_KEY",
+        "AF_TEST_REPO": "afasync-test"
+    },
+    "FM_NEXT": {
+        "AF_API_URL": "https://fm-next-af.devtools.intel.com/artifactory",
+        "AF_API_KEY": "FM_NEXT_API_KEY",
+        "AF_TEST_REPO": "afasync-test",
+        "AF_TEST_EMPTY_REPO": "afasync-test-empty"
+    }
+}
