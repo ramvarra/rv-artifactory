@@ -5,6 +5,8 @@ import aiohttp
 import base64
 from datetime import datetime, timezone
 
+from . import util
+
 # Custo Exceptions
 class APIError(Exception):
     def __init__(self, method, api, status, error):
@@ -68,13 +70,13 @@ class AFServer:
         session_args = dict(headers=headers)
         self.session = aiohttp.ClientSession(self.api_url, **session_args)
 
-    
+
     async def __aenter__(self):
         return self
 
     async def __aexit__(self, *exc):
         await self.session.close()
-        
+
 
     async def close_session(self):
         await self.session.close()
@@ -164,39 +166,10 @@ class AFServer:
         assert 'properties' in data, f"Missing properties key in {data}"
         return data['properties']
 
-    # Ack: https://github.com/devopshq/artifactory/blob/master/artifactory.py
-    @staticmethod
-    def escape_chars(s: str) -> str:
-        """
-        Performs character escaping of comma, pipe and equals characters
-        """
-        assert isinstance(s, str), f"bad non str value in property '{s}'"
-        return "".join(["\\" + ch if ch in "=|," else ch for ch in s])
-
-    @staticmethod
-    def encode_properties(parameters: dict) -> str:
-        """
-        Performs encoding of url parameters from dictionary to a string. It does
-        not escape backslash because it is not needed.
-        See: http://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-SetItemProperties
-        """
-        result = []
-
-        for key, value in parameters.items():
-            if isinstance(value, (list, tuple)):
-                value = ",".join([AFInstance.escape_chars(x) for x in value])
-            else:
-                value = AFServer.escape_chars(value)
-
-            result.append("=".join((key, value)))
-
-        return ";".join(result)
-
     async def set_properties(self, repo: str, path: str, props: dict, recursive: bool) -> None:
         assert repo and path
-        params = {'properties': self.encode_properties(props)}
+        params = {'properties': util.encode_properties(props)}
         if not recursive:
             params['recursive'] = "0"
         rpath = f"api/storage/{repo}"
         status, data = await self.http_request('PUT', rpath, params=params)
-

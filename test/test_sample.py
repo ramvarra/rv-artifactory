@@ -38,7 +38,7 @@ async def test_empty_repo(af_server, af_test_empty_repo):
 async def util_deploy(af_server, af_test_repo, path, input_obj, size, md5_checksum):
     result = await af_server.deploy_file(repo=af_test_repo, path=path, input_obj=input_obj)
     for key in ('repo', 'path', 'created', 'createdBy', 'downloadUri', 'mimeType', 'size', 'checksums', 'uri'):
-        assert key in result    
+        assert key in result
     assert result['path'] == path
     assert result['repo'] == af_test_repo
     assert result['size'] == str(size)
@@ -48,7 +48,7 @@ async def util_deploy(af_server, af_test_repo, path, input_obj, size, md5_checks
 
 async def test_deploy_str(af_server, af_test_repo):
     data = "HELLO, WORLD"
-    path = "/deploy-test/string.txt"    
+    path = "/deploy-test/string.txt"
     size = len(data.encode('utf-8'))
     md5_checksum = hashlib.md5(data.encode('utf-8')).hexdigest()
     await util_deploy(af_server, af_test_repo, path, data, size, md5_checksum)
@@ -76,9 +76,13 @@ async def test_deploy_binary_file(af_server, af_test_repo, tmp_path):
     data = b"HELLO, WORLD BINARY DATA"
     file_path = tmp_path / "binary_file.dat"
     with open(file_path, "wb") as fd:
-        fd.write(data)    
+        fd.write(data)
     size = len(data)
     md5_checksum = hashlib.md5(data).hexdigest()
     path = "/deploy-test/text_file.txt"
-    await util_deploy(af_server, af_test_repo, path, open(file_path, "rb"), size, md5_checksum) 
-    os.remove(file_path)             
+    await util_deploy(af_server, af_test_repo, path, open(file_path, "rb"), size, md5_checksum)
+    os.remove(file_path)
+
+async def test_read_empty_props(af_server, af_test_repo, af_test_file):
+    props = await af_server.get_properties(repo=af_test_repo, path=af_test_file)
+    assert props == {}

@@ -1,4 +1,5 @@
 yarl
 aiohttp
 aiodns
-#cchardet
+cchardet; platform_system != "Windows"
+
