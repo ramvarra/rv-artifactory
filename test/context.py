@@ -10,8 +10,8 @@ import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 import afasync
 
-# TEST_CONFIG = "FM_NEXT"
-TEST_CONFIG = "RV_HOME"
+TEST_CONFIG = "FM_NEXT"
+# TEST_CONFIG = "RV_HOME"
 
 CONFIG = json.load(open(os.path.join(os.path.dirname(__file__), 'config.json')))[TEST_CONFIG]
 
@@ -50,6 +50,10 @@ def event_loop(request):
 async def af_server(af_api_url, af_api_key):
     async with afasync.AFServer(af_api_url, api_key=af_api_key) as afs:
         yield afs
+
+@pytest.fixture(scope="session")
+async def af_version_license(af_server):
+    return await af_server.get_version_license()        
 
 # Fixture with signle artifact to test the properties
 @pytest.fixture(scope="session")

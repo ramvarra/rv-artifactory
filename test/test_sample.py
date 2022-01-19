@@ -86,3 +86,10 @@ async def test_deploy_binary_file(af_server, af_test_repo, tmp_path):
 async def test_read_empty_props(af_server, af_test_repo, af_test_file):
     props = await af_server.get_properties(repo=af_test_repo, path=af_test_file)
     assert props == {}
+
+async def test_version_license(af_version_license):
+    for k in ('version', 'licenseType'):
+        assert af_version_license[k]
+    if vt := af_version_license.get('validThrough'):
+        assert isinstance(vt, datetime)
+    assert re.match(r'\d+\.\d+\.\d+$', af_version_license['version'])

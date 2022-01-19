@@ -27,18 +27,17 @@ async def list_items(afi):
 
 async def main():
     async with afasync.AFServer(AF_API_URL, api_key=AF_API_KEY) as af_server:
-        logging.info("AFI: %s", af_server)        
-        str_data = b"HELLO, WORLD"
-        path = "/deploy-test/bytes.dat"
-        result = await af_server.deploy_file(repo=af_test_repo, path=path, input_obj=str_data)
-        print(result)
-        result = await af_server.delete_item(repo=af_test_repo, path=path)
-        print(result, type(result))
+        lv = await af_server.get_version_license()
+        print(lv)
+
     logging.info("main completed")
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.get_event_loop().run_until_complete(main()) 
-    #loop = asyncio.new_event_loop()
-    #loop.run_until_complete(main())
-    #loop.close()
+    #else:
+    #    loop = asyncio.new_event_loop()
+    #    loop.run_until_complete(main())
+    #    loop.close()

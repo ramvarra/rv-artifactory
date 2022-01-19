@@ -173,3 +173,14 @@ class AFServer:
             params['recursive'] = "0"
         rpath = f"api/storage/{repo}"
         status, data = await self.http_request('PUT', rpath, params=params)
+
+    async def get_version_license(self) -> dict:      
+        status, d = await self.http_request('GET', "api/system/license")        
+        status, data = await self.http_request('GET', "api/system/version")
+        d.update(data)
+        if vt := d.get('validThrough'):
+            #'Mar 24, 2022'
+            d['validThrough'] = datetime.strptime(vt, '%b %d, %Y')
+        if lt := d.pop('type'):
+            d['licenseType'] = lt
+        return d
