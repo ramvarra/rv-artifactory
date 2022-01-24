@@ -19,10 +19,6 @@ class ItemNotFoundError(FileNotFoundError):
     pass
 
 class AFItemInfo:
-    @staticmethod
-    def to_datetime(ts : str) -> datetime:
-        #'2021-12-05T03:48:29.706Z'
-        return datetime.fromisoformat(ts.rstrip('Z')).replace(tzinfo=timezone.utc)
 
     def __init__(self, *, json_resp : dict) -> None:
         assert 'repo' in json_resp, f"Missing repo key in json_resp: {json_resp}"
@@ -30,7 +26,7 @@ class AFItemInfo:
         self.repo = json_resp['repo']
         self.path = json_resp['path'].strip("/")
         for attr_name, key in [('created', 'created'), ('modified', 'lastModified'), ('updated', 'lastUpdated')]:
-            setattr(self, attr_name, self.to_datetime(json_resp.get(key)))
+            setattr(self, attr_name, util.to_datetime(json_resp.get(key)))
         children = json_resp.get('children')
         if children is not None:
             self.is_dir = True
@@ -105,7 +101,7 @@ class AFServer:
                 if errstr := self.check_for_errors(r.status, data):
                     data = errstr
                 if r.status == 404:
-                    if 'Unable to find item' in data:
+                    if 'Unable to find item' in data or 'Could not locate artifact' in data:
                         raise ItemNotFoundError(path)
                     elif "No properties could be found." in data:
                         raise NoPropertiesFound()
@@ -137,7 +133,7 @@ class AFServer:
         Returns either "" or b"" (depending on the type of path)
         '''
         assert repo and path
-        rpath = f"{repo}/{path}"
+        rpath = f"{repo}/{path.lstrip('/')}"
         status, result = await self.http_request('DELETE', rpath)
         return result
 
@@ -154,6 +150,11 @@ class AFServer:
             input_obj = input_obj.encode('utf-8')
         assert isinstance(input_obj, bytes), f"Input must be bytes"
         status, result = await self.http_request('PUT', rpath, data=input_obj)
+        if ct := result.pop('created'):
+            result['created'] = util.to_datetime(ct)
+        if size := result.pop('size'):
+            result['size'] = int(size)
+
         return result
 
     async def get_properties(self, repo : str, path: str) -> dict:
@@ -174,8 +175,8 @@ class AFServer:
         rpath = f"api/storage/{repo}"
         status, data = await self.http_request('PUT', rpath, params=params)
 
-    async def get_version_license(self) -> dict:      
-        status, d = await self.http_request('GET', "api/system/license")        
+    async def get_version_license(self) -> dict:
+        status, d = await self.http_request('GET', "api/system/license")
         status, data = await self.http_request('GET', "api/system/version")
         d.update(data)
         if vt := d.get('validThrough'):

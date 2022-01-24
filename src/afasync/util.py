@@ -1,4 +1,9 @@
 import hashlib
+from datetime import datetime, timezone
+
+def to_datetime(ts : str) -> datetime:
+    #'2021-12-05T03:48:29.706Z'
+    return datetime.fromisoformat(ts.rstrip('Z')).replace(tzinfo=timezone.utc)
 
 def md5_checksum(data: bytes) -> str:
     return hashlib.md5(data).hexdigest()

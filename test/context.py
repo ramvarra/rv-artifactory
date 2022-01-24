@@ -1,7 +1,6 @@
 import os
 import sys
 import pytest
-import pytest_asyncio
 import asyncio
 import json
 
@@ -10,8 +9,8 @@ import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 import afasync
 
-TEST_CONFIG = "FM_NEXT"
-# TEST_CONFIG = "RV_HOME"
+# TEST_CONFIG = "FM_NEXT"
+TEST_CONFIG = "RV_HOME"
 
 CONFIG = json.load(open(os.path.join(os.path.dirname(__file__), 'config.json')))[TEST_CONFIG]
 
@@ -53,7 +52,7 @@ async def af_server(af_api_url, af_api_key):
 
 @pytest.fixture(scope="session")
 async def af_version_license(af_server):
-    return await af_server.get_version_license()        
+    return await af_server.get_version_license()
 
 # Fixture with signle artifact to test the properties
 @pytest.fixture(scope="session")
@@ -61,7 +60,20 @@ async def af_test_file(af_server, af_test_repo):
     file_path =  '/test_file.dat'
     data = b"Hello,World"
     result = await af_server.deploy_file(repo=af_test_repo, path=file_path, input_obj=data)
-    assert result['size'] == str(len(data)), f"Upload failed"
+    assert result['size'] == len(data), f"Upload failed"
     yield file_path
     result = await af_server.delete_item(repo=af_test_repo, path=file_path)
     assert len(result) == 0, f"Delete failed. Ret: {result}"
+
+@pytest.fixture(scope="session")
+async def af_concurrent_test_folder(af_server, af_test_repo):
+    folder =  '/concurrent_test'
+    try:
+        await af_server.delete_item(repo=af_test_repo, path=folder)
+    except afasync.ItemNotFoundError:
+        pass
+    yield folder
+    try:
+        await af_server.delete_item(repo=af_test_repo, path=folder)
+    except afasync.ItemNotFoundError:
+        pass

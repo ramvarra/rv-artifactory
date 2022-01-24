@@ -41,7 +41,7 @@ async def util_deploy(af_server, af_test_repo, path, input_obj, size, md5_checks
         assert key in result
     assert result['path'] == path
     assert result['repo'] == af_test_repo
-    assert result['size'] == str(size)
+    assert result['size'] == size
     assert result['checksums']['md5'] == md5_checksum
     result = await af_server.delete_item(repo=af_test_repo, path=path)
     assert len(result) == 0
@@ -93,3 +93,25 @@ async def test_version_license(af_version_license):
     if vt := af_version_license.get('validThrough'):
         assert isinstance(vt, datetime)
     assert re.match(r'\d+\.\d+\.\d+$', af_version_license['version'])
+
+async def test_concurrent_deploy(af_server, af_test_repo, af_concurrent_test_folder):
+    n = 5
+    results = []
+    exp_results = []
+
+    for i in range(1, n+1):
+        path = af_concurrent_test_folder + f"/CONCURRENT_TEST_{i:00d}.txt"
+        data = f"HELLO,WORLD {i} " + "X" * i
+        size = len(data.encode('utf-8'))
+        md5_checksum = hashlib.md5(data.encode('utf-8')).hexdigest()
+        exp_result = {'size': size, 'md5': md5_checksum}
+        exp_results.append(exp_result)
+        r = await af_server.deploy_file(repo=af_test_repo, path=path, input_obj=data)
+        print(r)
+        results.append(r)
+
+    for exp, act in zip(exp_results, results):
+        assert exp['size'] == act['size']
+        assert exp['md5'] == act['checksums']['md5']
+
+    # await the tasks
