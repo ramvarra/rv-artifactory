@@ -73,7 +73,9 @@ async def af_concurrent_test_folder(af_server, af_test_repo):
     except afasync.ItemNotFoundError:
         pass
     yield folder
+    '''
     try:
         await af_server.delete_item(repo=af_test_repo, path=folder)
     except afasync.ItemNotFoundError:
         pass
+    '''

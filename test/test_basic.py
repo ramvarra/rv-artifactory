@@ -95,7 +95,7 @@ async def test_version_license(af_version_license):
     assert re.match(r'\d+\.\d+\.\d+$', af_version_license['version'])
 
 async def test_concurrent_deploy(af_server, af_test_repo, af_concurrent_test_folder):
-    n = 5
+    n = 100
     results = []
     exp_results = []
 
